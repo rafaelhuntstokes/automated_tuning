@@ -1,0 +1,3 @@
+SUBDAG EXTERNAL quad /data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/dag/algo.dag
+SCRIPT POST quad /data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/loop_criteria.sh
+RETRY quad ${NUM_RETRIES}
