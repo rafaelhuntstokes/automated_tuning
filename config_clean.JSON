@@ -1,0 +1,59 @@
+{
+    "CUR_LOOP": 1,
+    "MAX_LOOP": 20,
+    "TUNING_MODEL": "quadrupleExponential",
+    "NUM_SIMS": 100,
+    "NUM_EVENTS": 100,
+    "CUR_PARAMS": "",
+    "FV_CUT": 4000.0,
+    "AV_OFFSET": 184.115,
+    "DOMAIN_LOW": -5,
+    "DOMAIN_HIGH": 40,
+    "ISOTOPE_USE": "Po214",
+    "ISOTOPE_E": {
+        "Bi214": {
+            "E_LOW": 1.25,
+            "E_HIGH": 3.0
+        },
+        "Po214": {
+            "E_LOW": 0.7,
+            "E_HIGH": 1.1
+        }
+    },
+    "RBF_SETTINGS": {
+        "FEATURE_SCALE": [
+            2,
+            4,
+            5,
+            50,
+            0.1,
+            0.1,
+            0.1,
+            0.2
+        ],
+        "AMPLITUDE": 0.01,
+        "EXPLORE": 0.5
+    },
+    "MEASURED_POINTS": {
+        "T1": [],
+        "T2": [],
+        "T3": [],
+        "T4": [],
+        "TR": [],
+        "THETA1": [],
+        "THETA2": [],
+        "THETA3": []
+    },
+    "COST": [],
+    "GLOBAL_BEST": {
+        "CHI2": 1000000.0,
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "TR": 0,
+        "THETA1": 0,
+        "THETA2": 0,
+        "THETA3": 0
+    }
+}
