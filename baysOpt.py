@@ -310,12 +310,21 @@ MEASURED_VALS = config["COST"]
 ISOTOPE       = config["ISOTOPE_USE"]
 GLOBAL_BEST   = config["GLOBAL_BEST"] 
 
-if CURRENT_MODEL == "doubleExponential":
-    predicted_points = setup_predictions_double()
-elif CURRENT_MODEL == "tripleExponential":
-    predicted_points = setup_predictions_triple(GLOBAL_BEST["T1"], GLOBAL_BEST["T2"], GLOBAL_BEST["A1"], GLOBAL_BEST["A2"])
-elif CURRENT_MODEL == "quadrupleExponential":
+# if CURRENT_MODEL == "doubleExponential":
+#     predicted_points = setup_predictions_double()
+# elif CURRENT_MODEL == "tripleExponential":
+#     predicted_points = setup_predictions_triple(GLOBAL_BEST["T1"], GLOBAL_BEST["T2"], GLOBAL_BEST["A1"], GLOBAL_BEST["A2"])
+if CURRENT_MODEL == "quadrupleExponential" and ITERATION == 1:
+    # generate the uniformly sampled points upon which to compute predictions
     predicted_points = setup_predictions_quadruple_new(100)
+
+    # save these predictions for future iterations to readout from as a np array 
+    # dimensions are (N_points, N_params)
+    np.save("/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/predicted_points.npy", predicted_points)
+if CURRENT_MODEL == "quadrupleExponential" and ITERATION > 1:
+    # predicted points previously generated, so load them up
+    # want to keep the same predicted points for each iteration
+    predicted_points = np.load("/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/predicted_points.npy")
 
 # check what iteration --> if 1st, sample random point
 if ITERATION == 1:
@@ -496,10 +505,10 @@ else:
         config["MEASURED_POINTS"]["T3"] = T3
         config["MEASURED_POINTS"]["T4"] = T4
         config["MEASURED_POINTS"]["TR"] = TR
-        config["MEASURED_POINTS"]["A1"] = THETA1
-        config["MEASURED_POINTS"]["A2"] = THETA2
-        config["MEASURED_POINTS"]["A3"] = THETA3
-
+        config["MEASURED_POINTS"]["THETA1"] = THETA1
+        config["MEASURED_POINTS"]["THETA2"] = THETA2
+        config["MEASURED_POINTS"]["THETA3"] = THETA3
+        print(f"The chosen point was: {round(T1[-1], 3)}_{round(T2[-1], 3)}_{round(T3[-1], 3)}_{round(T4[-1], 3)}_{round(TR[-1], 3)}_{round(THETA1[-1], 3)}_{round(THETA2[-1], 3)}_{round(THETA3[-1], 3)}")
         config["CUR_PARAMS"]            = f"{round(T1[-1], 3)}_{round(T2[-1], 3)}_{round(T3[-1], 3)}_{round(T4[-1], 3)}_{round(TR[-1], 3)}_{round(THETA1[-1], 3)}_{round(THETA2[-1], 3)}_{round(THETA3[-1], 3)}"
 
     # create the macros, sh and submit files of relevance
