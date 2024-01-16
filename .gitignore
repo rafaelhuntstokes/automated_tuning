@@ -6,3 +6,6 @@ cov.png
 /macros
 /MC
 /plots
+/residuals
+/ratlogs
+predicted_points.npy

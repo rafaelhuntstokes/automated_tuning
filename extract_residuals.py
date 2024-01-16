@@ -68,7 +68,7 @@ def extractAnalysis(parameters, isotope, FV_CUT, zOffset, ENERGY_LOW, ENERGY_HIG
         reconPosition  = vertex.GetPosition() # returns in PSUP coordinates
         reconEnergy    = vertex.GetEnergy()        
         reconEventTime = vertex.GetTime()
-        print(reconPosition[0], reconPosition[1], reconPosition[2])
+
         # apply AV offset to position
         event_point = RAT.DU.Point3D(psup_system_id, reconPosition)
         event_point.SetCoordinateSystem(av_system_id)
@@ -107,7 +107,7 @@ def extractAnalysis(parameters, isotope, FV_CUT, zOffset, ENERGY_LOW, ENERGY_HIG
     return residualsRECON
 
 def create_graphics(data, MC, params, isotope, model):
-    binning = np.arange(-5, 60, 1)
+    binning = np.arange(-5, 350, 1)
 
     plt.figure()
     plt.hist(data, bins = binning, density = True, histtype = "step", label = "Data")
@@ -116,6 +116,7 @@ def create_graphics(data, MC, params, isotope, model):
     plt.xlabel("Time Residual (ns)")
     plt.ylabel("Normalised Counts per 1 ns Bin")
     plt.legend()
+    plt.xlim((-5, 100))
     plt.savefig(f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/plots/{isotope}/{params}_{model}.png")
     plt.close()
 
@@ -135,6 +136,7 @@ def create_graphics(data, MC, params, isotope, model):
     # cost vs iteration graph
     plt.figure()
     cost = config["COST"]
+    print(cost)
     plt.plot(cost)
     plt.title("Cost Function per Iteration")
     plt.xlabel("Iteration #")
