@@ -1,6 +1,6 @@
 import json
 import sys
-
+import shutil
 with open("config.JSON", "r") as f:
     config = json.load(f)
 
@@ -12,6 +12,13 @@ with open("config.JSON", "w") as f:
 
         config["CUR_LOOP"] = num_loops + 1
         json.dump(config, f, indent= 4)
+
+        # copy the suggest log from the previous iteration to a unique file 
+        # this avoids it being overwritten by the next loop of the dag!
+        shutil.copyfile("/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/suggest.out", f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/suggest_{num_loops}.out")
+        shutil.copyfile("/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/residuals.out", f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/residuals_{num_loops}.out")
+        shutil.copyfile("/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/suggest.err", f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/suggest_{num_loops}.err")
+        shutil.copyfile("/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/residuals.error", f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/logs/residuals_{num_loops}.error")
         sys.exit(1)
     else:
         # we have reached max iters for this tuning model --> proceed to the next model and reset CUR_LOOP
