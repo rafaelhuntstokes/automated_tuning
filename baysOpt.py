@@ -481,7 +481,7 @@ GLOBAL_BEST   = config["GLOBAL_BEST"]
 #     predicted_points = setup_predictions_triple(GLOBAL_BEST["T1"], GLOBAL_BEST["T2"], GLOBAL_BEST["A1"], GLOBAL_BEST["A2"])
 if CURRENT_MODEL == "quadrupleExponential" and ITERATION == 1:
     # generate the uniformly sampled points upon which to compute predictions
-    predicted_points = setup_predictions_quadruple_new(100)
+    predicted_points = setup_predictions_quadruple_new(1000)
 
     # save these predictions for future iterations to readout from as a np array 
     # dimensions are (N_points, N_params)
