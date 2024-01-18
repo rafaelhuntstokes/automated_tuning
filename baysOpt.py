@@ -133,7 +133,7 @@ def setup_predictions_quadruple_new(N_pts):
 
     return predicted_points
 
-def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predictions):
+def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predictions, ITERATION):
     """
     Simplest case acquisition function --> upper confidence bound.
 
@@ -151,23 +151,33 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
 
     # find the variance as the square of the diagonal of each point in the cov matrix
     variance = np.diag(cov_posterior)
+    print("variance:", variance[0:10])
+    print(f"Max variance: {max(variance)}\nCorresponding to point: {predicted_points[np.argmax(variance), :]}")
     f = - mu_posterior + exploration_coeff * variance
 
     # make a 2 D plot to see what's going on...
     import matplotlib.pyplot as plt
     import matplotlib
     matplotlib.use("Agg")
-    x= np.arange(1, len(variance)+1, 1)
-    fig = plt.figure()
-    fig.set_figwidth(20)
-    plt.errorbar(x, mu_posterior, yerr = 2*variance, elinewidth = 0.5, linestyle = "", marker = "o", markersize = 0.5)
-    # plt.yscale("log")
-    plt.axvline(np.argmax(f), linestyle = "--", color = "red", label = f"Sample Position - f{predictions[np.argmax(f), :]}")
-    plt.plot(x, f, label = "AF", color = "red", linewidth = 1)
-    plt.legend()
+
+    """
+    Marginalise out the other dimensions to see the mean, variance, and chosen
+    point to sample at in each dimension, for this iteration.
+    """
+
+    print("Variance dimensions: ", np.shape(variance))
+    print("Mean dimensions: ", np.shape(mu_posterior))
+    # x= np.arange(1, len(variance)+1, 1)
+    # fig = plt.figure()
+    # fig.set_figwidth(20)
+    # plt.errorbar(x, mu_posterior, yerr = 2*variance, elinewidth = 0.5, linestyle = "", marker = "o", markersize = 0.5)
+    # # plt.yscale("log")
+    # plt.axvline(np.argmax(f), linestyle = "--", color = "red", label = f"Sample Position - f{predictions[np.argmax(f), :]}")
+    # plt.plot(x, f, label = "AF", color = "red", linewidth = 1)
+    # plt.legend()
     
-    plt.savefig(f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/plots/posterior_{ITERATION}_{CURRENT_MODEL}.pdf")
-    plt.close()
+    # plt.savefig(f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/plots/posterior_{ITERATION}_{CURRENT_MODEL}.pdf")
+    # plt.close()
     # fig = plt.figure()
     # fig.set_figwidth(20)
     # idx_plot = np.nonzero(f)[0]
@@ -182,7 +192,143 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     # print("fmax: ", max(f), "\nFmin: ", min(f))
     # plt.savefig("AF.pdf")
     # find the max of f
+
+    # create histograms of each parameter independently
+    t1     = predicted_points[:, 0]
+    t2     = predicted_points[:, 1]
+    t3     = predicted_points[:, 2]
+    t4     = predicted_points[:, 3]
+    tr     = predicted_points[:, 4]
+    theta1 = predicted_points[:, 5]
+    theta2 = predicted_points[:, 6]
+    theta3 = predicted_points[:, 7]
+
+    # sort these arrays low --> high, then apply the sorted idx to the variance, mu and acquisition function
+    t1_idx         = np.argsort(t1)
+    t1_sorted      = np.sort(t1)
+    mu_t1_sorted   = mu_posterior[t1_idx]
+    var_t1_sorted  = variance[t1_idx]
+    acq_t1_sorted  = f[t1_idx]
+
+    t2_idx         = np.argsort(t2)
+    t2_sorted      = np.sort(t2)
+    mu_t2_sorted   = mu_posterior[t2_idx]
+    var_t2_sorted  = variance[t2_idx]
+    acq_t2_sorted  = f[t2_idx]
+
+    t3_idx         = np.argsort(t3)
+    t3_sorted      = np.sort(t3)
+    mu_t3_sorted   = mu_posterior[t3_idx]
+    var_t3_sorted  = variance[t3_idx]
+    acq_t3_sorted  = f[t3_idx]
+
+    t4_idx         = np.argsort(t4)
+    t4_sorted      = np.sort(t4)
+    mu_t4_sorted   = mu_posterior[t4_idx]
+    var_t4_sorted  = variance[t4_idx]
+    acq_t4_sorted  = f[t4_idx]
+
+    tr_idx         = np.argsort(tr)
+    tr_sorted      = np.sort(tr)
+    mu_tr_sorted   = mu_posterior[tr_idx]
+    var_tr_sorted  = variance[tr_idx]
+    acq_tr_sorted  = f[tr_idx]
+
+    theta1_idx         = np.argsort(theta1)
+    theta1_sorted      = np.sort(theta1)
+    mu_theta1_sorted   = mu_posterior[theta1_idx]
+    var_theta1_sorted  = variance[theta1_idx]
+    acq_theta1_sorted  = f[theta1_idx]
+
+    theta2_idx         = np.argsort(theta2)
+    theta2_sorted      = np.sort(theta2)
+    mu_theta2_sorted   = mu_posterior[theta2_idx]
+    var_theta2_sorted  = variance[theta2_idx]
+    acq_theta2_sorted  = f[theta2_idx]
+
+    theta3_idx         = np.argsort(theta3)
+    theta3_sorted      = np.sort(theta3)
+    mu_theta3_sorted   = mu_posterior[theta3_idx]
+    var_theta3_sorted  = variance[theta3_idx]
+    acq_theta3_sorted  = f[theta3_idx]
+
+    print("Max Posterior: ", np.max(mu_posterior))
+    fig, axes = plt.subplots(nrows = 2, ncols = 4, figsize = (24, 8))
+    # axes[0,0].errorbar(t1, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2, color = "black")
+    # axes[0,0].scatter(t1, f, color = "green")
+    axes[0,0].plot(t1_sorted, mu_t1_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[0,0].fill_between(t1_sorted, mu_t1_sorted - var_t1_sorted, mu_t1_sorted + var_t1_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[0,0].axvline(t1_sorted[np.argmax(acq_t1_sorted)], linestyle = "dashed", label = "Selected point: " + r"$T_1 = $" + f"{round(t1_sorted[np.argmax(acq_t1_sorted)], 3)}", color = "red")
+    axes[0,0].plot(t1_sorted, acq_t1_sorted, color = "green", label = "Acquisition Function")
+    axes[0,0].legend()
+    axes[0,0].set_xlabel(r"$T_1$ (ns)", fontsize = 20)
+    axes[0,0].set_ylabel("Posterior Mean", fontsize = 20)
     
+    # axes[0,1].errorbar(t2, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
+    axes[0,1].plot(t2_sorted, mu_t2_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[0,1].fill_between(t2_sorted, mu_t2_sorted - var_t2_sorted, mu_t2_sorted + var_t2_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[0,1].axvline(t2_sorted[np.argmax(acq_t2_sorted)], linestyle = "dashed", label = "Selected point: " + r"$T_2 = $" + f"{round(t2_sorted[np.argmax(acq_t2_sorted)], 3)}", color = "red")
+    axes[0,1].plot(t2_sorted, acq_t2_sorted, color = "green", label = "Acquisition Function")
+    axes[0,1].legend()
+    axes[0,1].set_xlabel(r"$T_2$ (ns)", fontsize = 20)
+    axes[0,1].set_ylabel("Posterior Mean", fontsize = 20)
+    
+    # axes[0,2].errorbar(t3, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
+    axes[0,2].plot(t3_sorted, mu_t3_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[0,2].fill_between(t3_sorted, mu_t3_sorted - var_t3_sorted, mu_t3_sorted + var_t3_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[0,2].axvline(t3_sorted[np.argmax(acq_t3_sorted)], linestyle = "dashed", label = "Selected point: " + r"$T_3 = $" + f"{round(t3_sorted[np.argmax(acq_t3_sorted)], 3)}", color = "red")
+    axes[0,2].plot(t3_sorted, acq_t3_sorted, color = "green", label = "Acquisition Function")
+    axes[0,2].legend()
+    axes[0,2].set_xlabel(r"$T_3$ (ns)", fontsize = 20)
+    axes[0,2].set_ylabel("Posterior Mean", fontsize = 20)
+    
+    # axes[0,3].errorbar(t4, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
+    axes[0,3].plot(t4_sorted, mu_t4_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[0,3].fill_between(t4_sorted, mu_t4_sorted - var_t4_sorted, mu_t4_sorted + var_t4_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[0,3].axvline(t4_sorted[np.argmax(acq_t4_sorted)], linestyle = "dashed", label = "Selected point: " + r"$T_4 = $" + f"{round(t4_sorted[np.argmax(acq_t4_sorted)], 3)}", color = "red")
+    axes[0,3].plot(t4_sorted, acq_t4_sorted, color = "green", label = "Acquisition Function")
+    axes[0,3].legend()
+    axes[0,3].set_xlabel(r"$T_4$ (ns)", fontsize = 20)
+    axes[0,3].set_ylabel("Posterior Mean", fontsize = 20)
+    
+    # axes[1,0].errorbar(tr, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
+    axes[1,0].plot(tr_sorted, mu_tr_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[1,0].fill_between(tr_sorted, mu_tr_sorted - var_tr_sorted, mu_tr_sorted + var_tr_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[1,0].axvline(tr_sorted[np.argmax(acq_tr_sorted)], linestyle = "dashed", label = "Selected point: " + r"$T_r = $" + f"{round(tr_sorted[np.argmax(acq_tr_sorted)], 3)}", color = "red")
+    axes[1,0].plot(tr_sorted, acq_tr_sorted, color = "green", label = "Acquisition Function")
+    axes[1,0].legend()
+    axes[1,0].set_xlabel(r"$T_R$ (ns)", fontsize = 20)
+    axes[1,0].set_ylabel("Posterior Mean", fontsize = 20)
+    
+    # axes[1,1].errorbar(theta1, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
+    axes[1,1].plot(theta1_sorted, mu_theta1_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[1,1].fill_between(theta1_sorted, mu_theta1_sorted - var_theta1_sorted, mu_theta1_sorted + var_theta1_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[1,1].axvline(theta1_sorted[np.argmax(acq_theta1_sorted)], linestyle = "dashed", label = "Selected point: " + r"$\theta_1 = $" + f"{round(theta1_sorted[np.argmax(acq_theta1_sorted)], 3)}", color = "red")
+    axes[1,1].plot(theta1_sorted, acq_theta1_sorted, color = "green", label = "Acquisition Function")
+    axes[1,1].legend()
+    axes[1,1].set_xlabel(r"$\theta_1$", fontsize = 20)
+    axes[1,1].set_ylabel("Posterior Mean", fontsize = 20)
+    
+    # axes[1,2].errorbar(theta2, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
+    axes[1,2].plot(theta2_sorted, mu_theta2_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[1,2].fill_between(theta2_sorted, mu_theta2_sorted - var_theta2_sorted, mu_theta2_sorted + var_theta2_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[1,2].axvline(theta2_sorted[np.argmax(acq_theta2_sorted)], linestyle = "dashed", label = "Selected point: " + r"$\theta_2 = $" + f"{round(theta2_sorted[np.argmax(acq_theta2_sorted)], 3)}", color = "red")
+    axes[1,2].plot(theta2_sorted, acq_theta2_sorted, color = "green", label = "Acquisition Function")
+    axes[1,2].legend()
+    axes[1,2].set_xlabel(r"$\theta_2$", fontsize = 20)
+    axes[1,2].set_ylabel("Posterior Mean", fontsize = 20)
+    
+    # axes[1,3].errorbar(theta3, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
+    axes[1,3].plot(theta3_sorted, mu_theta3_sorted, markersize = 5, color = "black", label = "Surrogate")
+    axes[1,3].fill_between(theta3_sorted, mu_theta3_sorted - var_theta3_sorted, mu_theta3_sorted + var_theta3_sorted, color = 'blue', alpha = 0.2, label = "Variance")
+    axes[1,3].axvline(theta3_sorted[np.argmax(acq_theta3_sorted)], linestyle = "dashed", label = "Selected point: " + r"$\theta_3 = $" + f"{round(theta3_sorted[np.argmax(acq_theta3_sorted)], 3)}", color = "red")
+    axes[1,3].plot(theta3_sorted, acq_theta3_sorted, color = "green", label = "Acquisition Function")
+    axes[1,3].legend()
+    axes[1,3].set_xlabel(r"$\theta_3$", fontsize = 20)
+    axes[1,3].set_ylabel("Posterior Mean", fontsize = 20)
+    fig.tight_layout()
+    plt.savefig(f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/plots/marginalised_{ITERATION}.pdf")
+
     return np.argmax(f)
 
 def kernel(x1, x2, params, model):
@@ -204,16 +350,29 @@ def kernel(x1, x2, params, model):
     if model == "quadrupleExponential":
         param_scales = np.array(params[1])
         length_matrix = np.diag(param_scales) 
+        print(f"Param Scales: {param_scales}\nLength Matrix: {length_matrix}")
     # I have worked through this in my big notebook and I think it makes sense --> going to trust jed with this one for
     # now thouhg, as I haven't got that book with me and Jed wrote this code before
     # correction I've worked through it in my supplementary notebook now, nice.
+    # print(x1[0])
+    # print(x1[1])
+    # print(((x1[0]-x1[1]) / param_scales)**2)
+    # print(np.sum(((x1[0]-x1[1]) / param_scales)**2))
     x1 = x1[:, None, :]
     x2 = x2[None, :, :]
+    print("Shape of points inputted into kernel: ", x1.shape)
     length_matrix = param_scales[None, None, :]
-    dX = (x1 - x2) / length_matrix
+    print(length_matrix[0,0,0])
+    print("Shape of length scale matrix applied: ", length_matrix.shape)
+    # print("Length Matrix applied: ", length_matrix)
+    print("Shape of subtraction: ", np.shape(x1-x2))
+    dX = (x1 - x2) / (2*length_matrix)
+    print("Distance between points matrix shape is: ", dX.shape)
     exponent = np.linalg.norm(dX, axis = 2)
+    print("EXPONENT: ", exponent)
+    print("Exponent after linalg norm is: ", exponent.shape)
     cov = (params[0]**2) * np.exp(- exponent**2)
-    
+    print("Shape of cov: ", cov.shape)
     ## actually lets do my nested loop implementation as a I think I understand it more ...
     # cov = np.zeros((x1.shape[0], x2.shape[0]))
     # for i in range(x1.shape[0]):
@@ -233,25 +392,31 @@ def conditional(x_measured, x_predicted, y_measured, params, model):
     print("Calculated covariance of measurements!")
     print("Shape of Covariance: ", cov_measured.shape)
     cov_predicted     = kernel(x_predicted, x_predicted, params, model)
+    print("Cov predicted: ", cov_predicted)
     print("Calculated covariance of predictions!")
     print("Shape of Covariance: ", cov_predicted.shape)
     cov_pred_measured = kernel(x_predicted, x_measured, params, model)
     print("Calculated covariance between predictions and measurements!")
     print("Shape of Covariance: ", cov_pred_measured.shape)
-    print(cov_measured)
     import matplotlib.pyplot as plt
     plt.figure()
     plt.imshow(cov_measured)
     plt.savefig("cov.png")
     plt.close()
 
+    # add some 'noise' to the measured points (dunno how much lol)
+    cov_measured = cov_measured + 0.005 * np.eye(cov_measured.shape[0])
+    print(cov_measured)
     # conditional PDF covariance functions
     inv_cov_measured = np.linalg.inv(cov_measured) # expensive step so only do it once --> N observations, order N^3 operation
-    
+    print(inv_cov_measured)
+    print("Measured points: ", y_measured)
     print("Inverted measurement covariance matrix!")
+    print(cov_pred_measured.shape)
     conditional_cov  = cov_predicted - cov_pred_measured.dot(inv_cov_measured.dot(cov_pred_measured.T))
     conditional_mu   = cov_pred_measured.dot(inv_cov_measured) @ y_measured
-
+    print(conditional_cov.shape)
+    print(conditional_mu.shape)
     return conditional_mu, conditional_cov
 
 def create_output_files(fname, model, sample_point):
@@ -321,6 +486,7 @@ if CURRENT_MODEL == "quadrupleExponential" and ITERATION == 1:
     # save these predictions for future iterations to readout from as a np array 
     # dimensions are (N_points, N_params)
     np.save("/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/predicted_points.npy", predicted_points)
+
 if CURRENT_MODEL == "quadrupleExponential" and ITERATION > 1:
     # predicted points previously generated, so load them up
     # want to keep the same predicted points for each iteration
@@ -461,7 +627,7 @@ else:
     print("Calculated the posterior!")
     print(f"Length of mean Posterior: {mu_posterior.shape}\nCovariance: {cov_posterior.shape}")
     # 3. pass this to the ACQUISITION FUNCTION to decide the best point to sample from next, given this conditional PDF
-    predicted_point_to_sample_idx = acquisition_function(mu_posterior, cov_posterior, EXPLORE_COEFF, predicted_points)
+    predicted_point_to_sample_idx = acquisition_function(mu_posterior, cov_posterior, EXPLORE_COEFF, predicted_points, ITERATION)
     next_sample_point             = predicted_points[predicted_point_to_sample_idx, :] 
     print("Found next sample point!")
 
