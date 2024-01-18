@@ -22,17 +22,17 @@
     },
     "RBF_SETTINGS": {
         "FEATURE_SCALE": [
-            2,
-            4,
-            5,
-            50,
-            0.1,
-            0.1,
-            0.1,
-            0.2
+            16,
+            80,
+            400,
+            800,
+            1.6,
+            8.0,
+            8.0,
+            16.0
         ],
-        "AMPLITUDE": 0.01,
-        "EXPLORE": 0.5
+        "AMPLITUDE": 1.0,
+        "EXPLORE": 1.1
     },
     "MEASURED_POINTS": {
         "T1": [],
