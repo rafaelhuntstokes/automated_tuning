@@ -10,3 +10,4 @@ rm -r MC/Po214/*
 rm macros/Po214/*.mac
 rm logs/*
 rm dag/*
+rm ratlogs/*

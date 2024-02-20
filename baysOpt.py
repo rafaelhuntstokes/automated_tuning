@@ -2,7 +2,7 @@ import json
 import numpy as np
 import string
 import os
-
+from scipy import stats
 def setup_predictions_double():
     T1 = np.arange(0.1, 10, 1)
     T2 = np.arange(5, 30, 1)
@@ -99,11 +99,11 @@ def setup_predictions_quadruple_new(N_pts):
     """
     
     # define the domains for the time constants t1, t2, t3, t4 and tR
-    T1 = [0.1, 10]
+    T1 = [3.0, 8.0]
     T2 = [5, 30]
     T3 = [50, 150]
     T4 = [200, 500]
-    tR = [0.1, 1.1]
+    tR = [0.4, 1.1]
 
     # define the domains for the angles theta1, theta2, theta3 defining the unit radius hypersphere
     theta1 = [0, np.pi]
@@ -149,8 +149,43 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     f(x; lambda) proportional to the mean of the predicted points + error on them.
     """
 
+    def calc_mean_error(parameter):
+        """
+        Function used to find the mean cost function in each dimension bin, and return the 
+        error on that mean for the plotting functions.
+        """
+
+        # use binned statistic to bin the prediction points in a given dimension and return the mean cost in that bin
+        # the bin idx for each point is also returned for use in the error calculation
+        mean_cost, bins, idx = stats.binned_statistic_dd(parameter, mu_posterior, bins = 20, statistic = "mean")
+        idx -= 1 # to get it to match the mids array and make bin[1] be mids[0]
+        
+        # plot the mid points of each bin
+        mids = bins[0][:-1] + np.diff(bins[0][:-1])[0]/2
+        
+        # use 'error propagation' formula to find the uncertainity on each average value
+        bin_error = []
+        for ibin in range(len(mids)):
+            # find all the variances and means inside this bin
+            var_in_bin   = variance[np.where(idx == ibin)[0]]
+            print(var_in_bin)
+            means_in_bin = mu_posterior[np.where(idx == ibin)[0]]
+            # print(var_in_bin.shape)
+            # print(means_in_bin.shape)
+            # print(var_in_bin)
+            # print(means_in_bin)
+            
+            # calculate the error on this point with the error propagation formula
+            err = (mean_cost[ibin] * np.sqrt(np.sum((var_in_bin / means_in_bin)**2))) / len(mids)
+            bin_error.append(err)
+
+        print("Mids: \n", mids)
+        print("mean_cost: \n", mean_cost)
+        print("Error: \n", bin_error)
+        return mids, mean_cost, bin_error
+    
     # find the variance as the square of the diagonal of each point in the cov matrix
-    variance = np.diag(cov_posterior)
+    variance = np.sqrt(np.diag(cov_posterior))
     print("variance:", variance[0:10])
     print(f"Max variance: {max(variance)}\nCorresponding to point: {predicted_points[np.argmax(variance), :]}")
     f = - mu_posterior + exploration_coeff * variance
@@ -253,16 +288,70 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     acq_theta3_sorted  = f[theta3_idx]
 
     print("Max Posterior: ", np.max(mu_posterior))
+    
+    """
+    New method to deal with the marginalisation --> binned statistic!
+    Calculate the mean of the surrogate across a binned 1D parameter scan.
+    This might make the output plots less spikey...
+    """
+
+    mids_t1, mean_cost_t1, bin_error_t1             = calc_mean_error(t1)
+    mids_t2, mean_cost_t2, bin_error_t2             = calc_mean_error(t2)
+    mids_t3, mean_cost_t3, bin_error_t3             = calc_mean_error(t3)
+    mids_t4, mean_cost_t4, bin_error_t4             = calc_mean_error(t4)
+    mids_tr, mean_cost_tr, bin_error_tr             = calc_mean_error(tr)
+    mids_theta1, mean_cost_theta1, bin_error_theta1 = calc_mean_error(theta1)
+    mids_theta2, mean_cost_theta2, bin_error_theta2 = calc_mean_error(theta2)
+    mids_theta3, mean_cost_theta3, bin_error_theta3 = calc_mean_error(theta3)
     fig, axes = plt.subplots(nrows = 2, ncols = 4, figsize = (24, 8))
-    # axes[0,0].errorbar(t1, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2, color = "black")
-    # axes[0,0].scatter(t1, f, color = "green")
+    axes[0,0].plot(mids_t1, mean_cost_t1, color = "black")
+    axes[0,0].fill_between(mids_t1, mean_cost_t1 - bin_error_t1, mean_cost_t1 + bin_error_t1, color = 'blue', alpha = 0.2)
+    axes[0,0].set_xlabel(r"$T_1$", fontsize = 20)
+    axes[0,0].set_ylabel("Mean Posterior", fontsize = 20)
+    axes[0,1].plot(mids_t2, mean_cost_t2, color = "black")
+    axes[0,1].fill_between(mids_t2, mean_cost_t2 - bin_error_t2, mean_cost_t2 + bin_error_t2, color = 'blue', alpha = 0.2)
+    axes[0,1].set_xlabel(r"$T_2$", fontsize = 20)
+    axes[0,1].set_ylabel("Mean Posterior", fontsize = 20)
+    axes[0,2].plot(mids_t3, mean_cost_t3, color = "black")
+    axes[0,2].fill_between(mids_t3, mean_cost_t3 - bin_error_t3, mean_cost_t3 + bin_error_t3, color = 'blue', alpha = 0.2)
+    axes[0,2].set_xlabel(r"$T_3$", fontsize = 20)
+    axes[0,2].set_ylabel("Mean Posterior", fontsize = 20)
+    axes[0,3].plot(mids_t4, mean_cost_t4, color = "black")
+    axes[0,3].fill_between(mids_t4, mean_cost_t4 - bin_error_t4, mean_cost_t4 + bin_error_t4, color = 'blue', alpha = 0.2)
+    axes[0,3].set_xlabel(r"$T_4$", fontsize = 20)
+    axes[0,3].set_ylabel("Mean Posterior", fontsize = 20)
+    axes[1,0].plot(mids_tr, mean_cost_tr, color = "black")
+    axes[1,0].fill_between(mids_tr, mean_cost_tr - bin_error_tr, mean_cost_tr + bin_error_tr, color = 'blue', alpha = 0.2)
+    axes[1,0].set_xlabel(r"$T_R$", fontsize = 20)
+    axes[1,0].set_ylabel("Mean Posterior", fontsize = 20)
+    axes[1,1].plot(mids_theta1, mean_cost_theta1, color = "black")
+    axes[1,1].fill_between(mids_theta1, mean_cost_theta1 - bin_error_theta1, mean_cost_theta1 + bin_error_theta1, color = 'blue', alpha = 0.2)
+    axes[1,1].set_xlabel(r"$\theta_1$", fontsize = 20)
+    axes[1,1].set_ylabel("Mean Posterior", fontsize = 20)
+    axes[1,2].plot(mids_theta2, mean_cost_theta2, color = "black")
+    axes[1,2].fill_between(mids_theta2, mean_cost_theta2 - bin_error_theta2, mean_cost_theta2 + bin_error_theta2, color = 'blue', alpha = 0.2)
+    axes[1,2].set_xlabel(r"$\theta_2$", fontsize = 20)
+    axes[1,2].set_ylabel("Mean Posterior", fontsize = 20)
+    axes[1,3].plot(mids_theta3, mean_cost_theta3, color = "black")
+    axes[1,3].fill_between(mids_theta3, mean_cost_theta3 - bin_error_theta3, mean_cost_theta3 + bin_error_theta3, color = 'blue', alpha = 0.2)
+    axes[1,3].set_xlabel(r"$\theta_3$", fontsize = 20)
+    axes[1,3].set_ylabel("Mean Posterior", fontsize = 20)
+    fig.tight_layout()
+    plt.savefig(f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/plots/marginalised_mean_{ITERATION}.pdf")
+    plt.close()
+
+
+    """
+    This creates a plot over every single parameter value in the space...
+    """
+    fig, axes = plt.subplots(nrows = 2, ncols = 4, figsize = (24, 8))
     axes[0,0].plot(t1_sorted, mu_t1_sorted, markersize = 5, color = "black", label = "Surrogate")
     axes[0,0].fill_between(t1_sorted, mu_t1_sorted - var_t1_sorted, mu_t1_sorted + var_t1_sorted, color = 'blue', alpha = 0.2, label = "Variance")
     axes[0,0].axvline(t1_sorted[np.argmax(acq_t1_sorted)], linestyle = "dashed", label = "Selected point: " + r"$T_1 = $" + f"{round(t1_sorted[np.argmax(acq_t1_sorted)], 3)}", color = "red")
     axes[0,0].plot(t1_sorted, acq_t1_sorted, color = "green", label = "Acquisition Function")
     axes[0,0].legend()
     axes[0,0].set_xlabel(r"$T_1$ (ns)", fontsize = 20)
-    axes[0,0].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[0,0].set_ylabel("Posterior", fontsize = 20)
     
     # axes[0,1].errorbar(t2, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
     axes[0,1].plot(t2_sorted, mu_t2_sorted, markersize = 5, color = "black", label = "Surrogate")
@@ -271,7 +360,7 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     axes[0,1].plot(t2_sorted, acq_t2_sorted, color = "green", label = "Acquisition Function")
     axes[0,1].legend()
     axes[0,1].set_xlabel(r"$T_2$ (ns)", fontsize = 20)
-    axes[0,1].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[0,1].set_ylabel("Posterior", fontsize = 20)
     
     # axes[0,2].errorbar(t3, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
     axes[0,2].plot(t3_sorted, mu_t3_sorted, markersize = 5, color = "black", label = "Surrogate")
@@ -280,7 +369,7 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     axes[0,2].plot(t3_sorted, acq_t3_sorted, color = "green", label = "Acquisition Function")
     axes[0,2].legend()
     axes[0,2].set_xlabel(r"$T_3$ (ns)", fontsize = 20)
-    axes[0,2].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[0,2].set_ylabel("Posterior", fontsize = 20)
     
     # axes[0,3].errorbar(t4, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
     axes[0,3].plot(t4_sorted, mu_t4_sorted, markersize = 5, color = "black", label = "Surrogate")
@@ -289,7 +378,7 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     axes[0,3].plot(t4_sorted, acq_t4_sorted, color = "green", label = "Acquisition Function")
     axes[0,3].legend()
     axes[0,3].set_xlabel(r"$T_4$ (ns)", fontsize = 20)
-    axes[0,3].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[0,3].set_ylabel("Posterior", fontsize = 20)
     
     # axes[1,0].errorbar(tr, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
     axes[1,0].plot(tr_sorted, mu_tr_sorted, markersize = 5, color = "black", label = "Surrogate")
@@ -298,7 +387,7 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     axes[1,0].plot(tr_sorted, acq_tr_sorted, color = "green", label = "Acquisition Function")
     axes[1,0].legend()
     axes[1,0].set_xlabel(r"$T_R$ (ns)", fontsize = 20)
-    axes[1,0].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[1,0].set_ylabel("Posterior", fontsize = 20)
     
     # axes[1,1].errorbar(theta1, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
     axes[1,1].plot(theta1_sorted, mu_theta1_sorted, markersize = 5, color = "black", label = "Surrogate")
@@ -307,7 +396,7 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     axes[1,1].plot(theta1_sorted, acq_theta1_sorted, color = "green", label = "Acquisition Function")
     axes[1,1].legend()
     axes[1,1].set_xlabel(r"$\theta_1$", fontsize = 20)
-    axes[1,1].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[1,1].set_ylabel("Posterior", fontsize = 20)
     
     # axes[1,2].errorbar(theta2, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
     axes[1,2].plot(theta2_sorted, mu_theta2_sorted, markersize = 5, color = "black", label = "Surrogate")
@@ -316,7 +405,7 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     axes[1,2].plot(theta2_sorted, acq_theta2_sorted, color = "green", label = "Acquisition Function")
     axes[1,2].legend()
     axes[1,2].set_xlabel(r"$\theta_2$", fontsize = 20)
-    axes[1,2].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[1,2].set_ylabel("Posterior", fontsize = 20)
     
     # axes[1,3].errorbar(theta3, mu_posterior, yerr = variance, linestyle = "", marker = "o", markersize= 5, capsize = 2,color = "black")
     axes[1,3].plot(theta3_sorted, mu_theta3_sorted, markersize = 5, color = "black", label = "Surrogate")
@@ -325,7 +414,7 @@ def acquisition_function(mu_posterior, cov_posterior, exploration_coeff, predict
     axes[1,3].plot(theta3_sorted, acq_theta3_sorted, color = "green", label = "Acquisition Function")
     axes[1,3].legend()
     axes[1,3].set_xlabel(r"$\theta_3$", fontsize = 20)
-    axes[1,3].set_ylabel("Posterior Mean", fontsize = 20)
+    axes[1,3].set_ylabel("Posterior", fontsize = 20)
     fig.tight_layout()
     plt.savefig(f"/data/snoplus3/hunt-stokes/automated_tuning/optimiser_v2/plots/marginalised_{ITERATION}.pdf")
 
@@ -405,7 +494,7 @@ def conditional(x_measured, x_predicted, y_measured, params, model):
     plt.close()
 
     # add some 'noise' to the measured points (dunno how much lol)
-    cov_measured = cov_measured + 0.005 * np.eye(cov_measured.shape[0])
+    cov_measured = cov_measured + 0.05 * np.eye(cov_measured.shape[0])
     print(cov_measured)
     # conditional PDF covariance functions
     inv_cov_measured = np.linalg.inv(cov_measured) # expensive step so only do it once --> N observations, order N^3 operation
@@ -481,7 +570,7 @@ GLOBAL_BEST   = config["GLOBAL_BEST"]
 #     predicted_points = setup_predictions_triple(GLOBAL_BEST["T1"], GLOBAL_BEST["T2"], GLOBAL_BEST["A1"], GLOBAL_BEST["A2"])
 if CURRENT_MODEL == "quadrupleExponential" and ITERATION == 1:
     # generate the uniformly sampled points upon which to compute predictions
-    predicted_points = setup_predictions_quadruple_new(1000)
+    predicted_points = setup_predictions_quadruple_new(10000)
 
     # save these predictions for future iterations to readout from as a np array 
     # dimensions are (N_points, N_params)

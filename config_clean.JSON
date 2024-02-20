@@ -1,6 +1,6 @@
 {
     "CUR_LOOP": 1,
-    "MAX_LOOP": 20,
+    "MAX_LOOP": 100,
     "TUNING_MODEL": "quadrupleExponential",
     "NUM_SIMS": 100,
     "NUM_EVENTS": 100,
@@ -22,14 +22,14 @@
     },
     "RBF_SETTINGS": {
         "FEATURE_SCALE": [
-            16,
-            80,
-            400,
-            800,
-            1.6,
-            8.0,
-            8.0,
-            16.0
+            5,
+            50,
+            100,
+            250,
+            0.5,
+            1.5,
+            1.5,
+            2.5
         ],
         "AMPLITUDE": 1.0,
         "EXPLORE": 1.1
